@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quotation Editor - Patidar Windows & Doors System</title>
+<style>
+/* ===== Screen layout ===== */
+*{box-sizing:border-box}
+body{margin:0;background:#e9ecf1;font:13px/1.35 Calibri,Carlito,Arial,sans-serif;color:#111}
+.bar{position:sticky;top:0;z-index:5;background:#1f2a44;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bar button,.bar .b{background:#fff;border:0;border-radius:4px;padding:7px 11px;font:600 13px Arial,sans-serif;cursor:pointer}
+.bar .add{background:#2e9e5b;color:#fff}.bar .pri{background:#f2b705}.bar .dg{color:#a11}
+#st{color:#cfd6e6;font-size:12px;margin-left:auto}
+#msgs{max-width:210mm;margin:8px auto 0;padding:0 12px}
+#msgs div{background:#fff3cd;border-left:4px solid #e0a800;padding:4px 8px;margin-bottom:3px;font-size:12px}
+.wrap{overflow-x:auto;padding:12px}
+.sheet{background:#fff;width:210mm;min-width:210mm;margin:0 auto;padding:10mm;box-shadow:0 2px 10px #0003}
+.wm{display:none}
+.dt{text-align:right;font:600 12px Arial,sans-serif;color:#222;margin-bottom:4px}
+.pw{text-align:center;font:600 11px Arial,sans-serif;color:#555;margin-top:14px;padding-top:6px;border-top:1px solid #ccc}
+/* ===== Letterhead ===== */
+.head{display:flex;align-items:center;gap:10px}
+.logo{width:105px;flex:none}
+.hc{flex:1;text-align:center;font-family:Cambria,Georgia,serif;font-weight:700;color:#4a86e8;font-size:13px;line-height:1.3}
+.hc .nm{font:400 25px Copperplate,"Copperplate Gothic Light","Cinzel",Georgia,serif;color:#3b4cc0;letter-spacing:.5px}
+h2.q{text-align:center;color:#12129c;font:700 17px Arial,sans-serif;margin:16px 0 4px}
+[contenteditable]{outline:0;white-space:pre-wrap;min-height:1em}
+[contenteditable]:hover,[contenteditable]:focus{background:#fff9d6}
+@media screen{[data-ph]:empty::before{content:attr(data-ph);color:#aab;font-weight:400}}
+/* ===== Tables ===== */
+table{border-collapse:collapse}
+.pd{width:100%;font-family:Arial,sans-serif;font-size:12px}
+.pd td{border:1px solid #222;padding:2px 4px;vertical-align:top}
+.pd .h{background:#e3e3e3;font-weight:700}
+.letter{margin:12px 0 4px;font-size:12.5px;line-height:1.5}
+.sign{margin-top:18px;min-height:90px;font-size:12.5px}
+.it{width:100%;table-layout:fixed;font-size:11.5px;margin-top:6px}
+.it th,.it td{border:1px solid #222;padding:2px 4px;vertical-align:top}
+.it th{font-weight:700;text-align:center;line-height:1.25}
+.it thead{display:table-header-group}
+.it tr{break-inside:avoid;page-break-inside:avoid}
+.it .r{text-align:right}.it .tot td{font-weight:700;background:#f0f0f0}
+.n{width:100%;border:1px solid #bcc;border-radius:2px;font:inherit;text-align:right;padding:1px 3px;background:#fff}
+.sz{text-align:center;white-space:nowrap}.sz .n{width:42%;min-width:0;text-align:center}
+.it .n{-moz-appearance:textfield;appearance:textfield}.it .n::-webkit-inner-spin-button,.it .n::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.it td>.n[data-k^="rate"]{display:block;margin-bottom:2px}
+.it td>.n[data-k="qty"]{text-align:center;padding:1px 2px;font-weight:600}.t{width:100%;border:1px solid #bcc;font:inherit;padding:1px 2px;text-align:center}
+.imc img{width:100%;height:105px;object-fit:contain;display:block;background:#fafafa}
+.noimg{height:105px;display:flex;align-items:center;justify-content:center;color:#999;font-size:11px;border:1px dashed #bbb}
+.np button,.np .fl{font:600 11px Arial;padding:2px 6px;margin-top:3px;border:1px solid #999;background:#f4f4f4;border-radius:3px;cursor:pointer;display:inline-block}
+.np .dl{color:#a11}
+.err{outline:2px solid #d33;background:#ffeaea}
+.sum{display:flex;gap:18px;margin-top:10px;align-items:flex-start;break-inside:avoid}
+.sum table{font-size:11.5px}.sum td,.sum th{border:1px solid #222;padding:2px 5px}
+.avg{width:42%}.chg{flex:1}
+.sum .r{text-align:right;font-weight:700}.sum th{text-align:left}
+.words{border:1px solid #222;text-align:center;font-weight:700;padding:4px;margin-top:10px;font-size:12px;break-inside:avoid}
+.terms{margin-top:22px;break-inside:avoid}
+.terms .tt{font-size:10.5px;font-weight:700}
+.terms #terms{font:800 13px "Arial Black",Arial,sans-serif;line-height:2}
+.n:disabled{color:#111;-webkit-text-fill-color:#111;background:#f1f1f1}
+.sum .n{width:70px}.sum #gstPct{width:3.4em;text-align:center}
+/* ===== Print ===== */
+@page{size:A4;margin:10mm 10mm 14mm;@bottom-center{content:"Page " counter(page) " of " counter(pages);font:10px Arial}@bottom-right{content:"Powered By Gomez";font:600 10px Arial;color:#444}}
+@media print{
+ body{background:#fff;font-size:12px}
+ .bar,#msgs,.np{display:none!important}
+ .wrap{padding:0;overflow:visible}
+ .sheet{width:auto;min-width:0;padding:0;box-shadow:none;margin:0}
+ .n,.t{border:0!important;background:transparent!important;padding:0;-webkit-appearance:none;appearance:none}
+ .n::-webkit-inner-spin-button{display:none}
+ .noimg{border:0;color:transparent;height:40px}
+ .sign,.sum,.words,.terms{break-inside:avoid;page-break-inside:avoid}
+ .pw{display:none}
+ /* print column widths: give Size / Area / Rate headers enough room so nothing wraps or overflows */
+ .it{table-layout:fixed;width:100%;font-size:11px}
+ .it col:nth-child(1){width:5%}.it col:nth-child(2){width:11%}.it col:nth-child(3){width:8%}.it col:nth-child(4){width:15%}
+ .it col:nth-child(5){width:17%}.it col:nth-child(6){width:6%}.it col:nth-child(7){width:12%}.it col:nth-child(8){width:15%}.it col:nth-child(9){width:11%}
+ .it th{font-size:10px;padding:2px 1px;white-space:nowrap}
+ .it td{padding:2px 3px;overflow-wrap:anywhere}
+ .it .sz{white-space:nowrap;overflow-wrap:normal}
+ .it .sz .n{width:40%}
+ .it .r,.it td:nth-child(8){white-space:nowrap}
+ html,body{height:auto}
+ [contenteditable]:hover,[contenteditable]:focus{background:none}
+ .err{outline:0;background:none}
+ input:focus,select:focus{outline:0}
+ .wm{display:block;position:fixed;top:42%;left:22%;transform:rotate(58deg);font:34px Georgia,serif;color:#000;opacity:.05;white-space:nowrap}
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style></head><body>
+<div class="bar">
+ <button class="add" id="bAdd">+ Add New Type</button>
+ <button id="bChg">+ Add Charge</button>
+ <button class="pri" id="bPrint">Print / Save as PDF</button>
+ <button id="bSave">Save</button>
+ <button id="bExp">Export JSON</button>
+ <label class="b">Import JSON<input type="file" id="fImp" accept=".json,application/json" hidden></label>
+ <label class="b">Import PDF<input type="file" id="fPdf" accept="application/pdf,.pdf" hidden></label>
+ <button id="bNew" class="dg">New Quotation</button>
+  <span id="st"></span>
+</div>
+<div id="msgs"></div>
+<div class="wrap"><div class="sheet" id="sheet">
+ <div class="wm">Patidar Windows And Doors System</div>
+ <div class="dt">Date: <span id="nowD"></span> &nbsp; Time: <span id="nowT"></span></div>
+ <div class="head">
+  <img class="logo" id="logoImg" alt="" style="display:none">
+  <div class="hc"><img id="nameImg" alt="" style="display:none;width:100%;max-width:430px"><div class="nm" id="nameTxt" contenteditable data-f="cname" data-ph="Company name"></div><div contenteditable data-f="caddr1" data-ph="Address line 1"></div><div contenteditable data-f="caddr2" data-ph="Address line 2"></div><div contenteditable data-f="ctel" data-ph="Phone, email"></div></div>
+ </div>
+ <h2 class="q">Quotation</h2>
+ <table class="pd">
+  <colgroup><col style="width:48%"><col style="width:35%"><col style="width:17%"></colgroup>
+  <tr><td class="h">Party Details</td><td class="h">Quotation No.:- <span contenteditable data-f="qno" data-ph="Quotation no." style="display:inline"></span></td><td class="h">Date:-<span contenteditable data-f="qdate" data-ph="Date" style="display:inline"></span></td></tr>
+  <tr><td style="font-weight:700;font-size:13px">Party Name:- <span contenteditable data-f="pname" data-ph="Party name" style="display:inline"></span></td><td colspan="2">Ref. By – <span contenteditable data-f="ref" style="display:inline"></span></td></tr>
+  <tr><td style="height:84px">Address:- <span contenteditable data-f="paddr" style="display:inline"></span><br><br>Contact Person :- <span contenteditable data-f="pcp" style="display:inline"></span><br>Contact No.:- <span contenteditable data-f="pcno" style="display:inline"></span></td><td colspan="2">Note:– <span contenteditable data-f="note" style="display:inline"></span></td></tr>
+ </table>
+ <div class="letter" contenteditable data-f="letter" data-ph="Introductory letter (optional)"></div>
+ <div class="sign"><b contenteditable data-f="signco" data-ph="For (company name),"></b><br><br><br><br>Authorized Signatory</div>
+
+ <table class="it">
+  <colgroup><col style="width:5%"><col style="width:12%"><col style="width:9%"><col style="width:17%"><col style="width:17%"><col style="width:7%"><col style="width:10%"><col style="width:13%"><col style="width:10%"></colgroup>
+  <thead><tr><th>Type</th><th>Image</th><th>Location</th><th>Production Description</th><th>Size&nbsp;(Mtr.)<br>Size&nbsp;(Sq.Ft.)<br>W × H</th><th>Qty</th><th>Area&nbsp;(Sq.Mtr.)<br>Area&nbsp;(Sq.Ft.)</th><th>Rate&nbsp;/&nbsp;(Sq.Mtr.)<br>Rate&nbsp;/&nbsp;(Sq.Ft.)</th><th>Amount (Rs.)</th></tr></thead>
+  <tbody id="rows"></tbody>
+ </table>
+ <div class="sum">
+  <table class="avg"><tr><td class="r">Average Rate / Sq.Mtr. :</td><td><b id="avM"></b></td></tr><tr><td class="r">Average Rate / Sq.Ft. :</td><td><b id="avF"></b></td></tr></table>
+  <table class="chg"><tbody id="chg"></tbody></table>
+ </div>
+ <div class="words" id="words"></div>
+ <div class="terms"><div class="tt">TERMS &amp; CONDITION :</div><div id="terms" contenteditable data-f="terms" data-ph="Terms and conditions (one per line)"></div></div>
+ <div class="pw">Powered By Gomez</div>
+</div></div>
+
+<script>
+"use strict";
+/* ================= Constants & helpers ================= */
+const FT = 3.280839895, SQF = 10.763910417, KEY = "quotationEditor_v2";
+const $ = s => document.querySelector(s);
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const fmt = (n, d) => (isFinite(n) ? n : 0).toLocaleString("en-IN", {minimumFractionDigits: d, maximumFractionDigits: d});
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const raw = v => (v === "" || v == null) ? "" : v;
+
+/* Indian-style amount in words */
+const ONES = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+const TENS = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+function below100(n){ return n < 20 ? ONES[n] : TENS[Math.floor(n/10)] + (n%10 ? " " + ONES[n%10] : ""); }
+function words(n){
+  n = Math.max(0, Math.round(n)); if (!n) return "Zero";
+  const parts = [], u = [[1e7,"Crore"],[1e5,"Lakh"],[1e3,"Thousand"]];
+  for (const [v, nm] of u){ const q = Math.floor(n / v); if (q){ parts.push(words(q) + " " + nm); n %= v; } }
+  const h = Math.floor(n / 100); if (h){ parts.push(ONES[h] + " Hundred"); n %= 100; }
+  if (n) parts.push(below100(n));
+  return parts.join(" ");
+}
+
+/* ================= Data ================= */
+const LETTER = "";
+const TERMS = "";
+const COMPANY = {cname:"", caddr1:"", caddr2:"", ctel:"", signco:"", terms:TERMS};
+function blank(keep){
+  const d = new Date(), p = x => String(x).padStart(2,"0");
+  return {srcAmt: null, f: {...COMPANY, qno:"", qdate:`${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()}`, pname:"", paddr:"", pcp:"", pcno:"", ref:"", note:"", letter:LETTER}, items:[], charges:[], gst:0, brand:{}};
+}
+function fresh(){
+  const n = blank();
+  ["cname","caddr1","caddr2","ctel","signco","letter","terms"].forEach(k => n.f[k] = S.f[k] || "");
+  n.brand = S.brand || {};
+  return n;
+}
+let S;
+
+/* ================= Calculation ================= */
+function calc(it){
+  if (it.orig) return it.orig;                      // untouched source row: keep the PDF's printed numbers
+  const w = num(it.w), h = num(it.h), q = num(it.qty);
+  const aM = w * h * q, aF = aM * SQF;              // area = W x H x Qty
+  const amt = it.unit === "pc" ? q * num(it.rateP) : it.unit === "sqft" ? aF * num(it.rateF) : aM * num(it.rateM);   // pc = fixed rate per window x Qty
+  return {wf: w * FT, hf: h * FT, aM, aF, amt};
+}
+function totals(){
+  let q = 0, aM = 0, aF = 0, amt = 0;
+  S.items.forEach(it => { const c = calc(it); q += num(it.qty); aM += c.aM; aF += c.aF; amt += c.amt; });
+  if (S.srcAmt != null && S.items.length && S.items.every(it => it.orig)) amt = S.srcAmt;   // PDF's own unrounded total
+  const others = S.charges.reduce((s, c) => s + num(c.amt), 0);
+  const gst = (num(S.gst) / 100) * (amt + others);   // GST applied once, on items + other charges
+  const grand = Math.round(amt + others + gst);
+  return {q, aM, aF, amt, gst, grand};
+}
+
+/* ================= Rendering ================= */
+function rowHTML(it, i){
+  const c = calc(it);
+  return `<tr data-i="${i}">
+  <td><input class="t" data-k="type" value="${esc(it.type)}"><div class="np"><button class="dl" data-act="del">Delete</button></div></td>
+  <td class="imc">${it.img ? `<img src="${it.img}" alt="">` : `<div class="noimg">No image</div>`}<div class="np"><label class="fl">Upload image<input type="file" accept="image/*" data-act="img" hidden></label></div></td>
+  <td><div contenteditable data-k="loc">${esc(it.loc)}</div></td>
+  <td><div contenteditable data-k="desc">${esc(it.desc)}</div></td>
+  <td class="sz"><input class="n" type="number" min="0" step="any" data-k="w" value="${raw(it.w)}"> X <input class="n" type="number" min="0" step="any" data-k="h" value="${raw(it.h)}"><div data-o="ft"></div></td>
+  <td><input class="n" type="number" min="0" step="1" data-k="qty" value="${raw(it.qty)}"></td>
+  <td class="r"><div data-o="aM"></div><div data-o="aF"></div></td>
+  <td><input class="n" type="number" min="0" step="any" data-k="rateM" title="Rate per Sq.Mtr." value="${raw(it.rateM == null ? "" : it.rateM)}"${it.unit==="pc"?" disabled":""}><input class="n" type="number" min="0" step="any" data-k="rateF" title="Rate per Sq.Ft." value="${raw(it.rateF == null ? "" : it.rateF)}"${it.unit==="pc"?" disabled":""}><input class="n" type="number" min="0" step="any" data-k="rateP" title="Rate per window (per Qty)" placeholder="Rate / Window" style="${it.unit==="pc"?"":"display:none"}" value="${raw(it.rateP == null ? "" : it.rateP)}">
+   <div class="np"><select data-k="unit" title="Billing unit"><option value="sqm"${it.unit==="sqm"?" selected":""}>Bill: Sq.Mtr.</option><option value="sqft"${it.unit==="sqft"?" selected":""}>Bill: Sq.Ft.</option><option value="pc"${it.unit==="pc"?" selected":""}>Bill: Per Window (Qty)</option></select></div></td>
+  <td class="r" data-o="amt"></td></tr>`;
+}
+function renderRows(){
+  $("#rows").innerHTML = S.items.map(rowHTML).join("") +
+   `<tr class="tot"><td colspan="5" class="r">Total :</td><td id="tQ"></td><td class="r"><div id="tM"></div><div id="tF"></div></td><td></td><td class="r" id="tA"></td></tr>`;
+  S.items.forEach((_, i) => refreshRow(i));
+}
+function refreshRow(i){
+  const tr = $(`tr[data-i="${i}"]`); if (!tr) return;
+  const it = S.items[i], c = calc(it), set = (o, v) => tr.querySelector(`[data-o="${o}"]`).textContent = v;
+  set("ft", `${fmt(c.wf,3)} X ${fmt(c.hf,3)}`.replace(/,/g,""));
+  set("aM", fmt(c.aM,3)); set("aF", fmt(c.aF,3)); set("amt", fmt(c.amt,2));
+  // keep the two rate inputs in sync without firing input events (no circular updates)
+  const pc = it.unit === "pc", dM = c.aM > 0 ? c.amt / c.aM : 0;   // when billed per window, Sq.Mtr./Sq.Ft. rates are shown as derived values
+  [["rateM", dM], ["rateF", dM / SQF]].forEach(([k, d]) => { const el = tr.querySelector(`[data-k="${k}"]`); if (pc) el.value = d ? d.toFixed(2) : ""; else if (el !== document.activeElement && it[k] !== "" && it[k] != null) el.value = (+it[k]).toFixed(2); });
+}
+function renderCharges(){
+  $("#chg").innerHTML = `<tr><th colspan="3">Additional Charges</th></tr><tr><th>Charges</th><th colspan="2" style="text-align:right">Amount</th></tr>` +
+   S.charges.map((c, i) => `<tr data-c="${i}"><td><div contenteditable data-k="name">${esc(c.name)}</div></td><td class="r"><input class="n" type="number" step="any" data-k="amt" value="${raw(c.amt)}"></td><td class="np"><button class="dl" data-act="delc">x</button></td></tr>`).join("") +
+   `<tr><td>GST (<input class="n" type="number" min="0" step="any" id="gstPct" value="${raw(S.gst)}">%)</td><td class="r" colspan="2" id="gstAmt"></td></tr>
+    <tr><td class="r">Grand Total:</td><td class="r" colspan="2" id="gt"></td></tr>`;
+}
+function paintTotals(){
+  const t = totals(), a = (id, v) => { const e = $(id); if (e) e.textContent = v; };
+  a("#tQ", fmt(t.q,0)); a("#tM", fmt(t.aM,3)); a("#tF", fmt(t.aF,3)); a("#tA", fmt(t.amt,2));
+  a("#gstAmt", fmt(t.gst,2)); a("#gt", fmt(t.grand,2));
+  a("#avM", t.aM > 0 ? fmt(t.grand / t.aM, 2) : "0.00"); a("#avF", t.aF > 0 ? fmt(t.grand / t.aF, 2) : "0.00");
+  a("#words", `( Rupees ${words(t.grand)} Only )`);
+}
+
+/* ================= Validation ================= */
+function validate(){
+  const m = [];
+  document.querySelectorAll(".err").forEach(e => e.classList.remove("err"));
+  if (!(S.f.pname || "").trim()) m.push("Party name is required.");
+  if (!(S.f.qno || "").trim()) m.push("Quotation number is required.");
+  S.items.forEach((it, i) => {
+    if (it.orig) return;
+    const tr = $(`tr[data-i="${i}"]`), bad = (k, t) => { m.push(`${it.type}: ${t}`); const e = tr && tr.querySelector(`[data-k="${k}"]`); e && e.classList.add("err"); };
+    if (!(num(it.w) > 0)) bad("w", "width must be greater than 0.");
+    if (!(num(it.h) > 0)) bad("h", "height must be greater than 0.");
+    if (!(num(it.qty) >= 1) || !Number.isInteger(num(it.qty))) bad("qty", "quantity must be a whole number, 1 or more.");
+    const k = it.unit === "pc" ? "rateP" : it.unit === "sqft" ? "rateF" : "rateM";
+    if (!(num(it[k]) > 0)) bad(k, "enter a rate greater than 0 for the billing unit (per window / Sq.Ft. / Sq.Mtr.).");
+  });
+  if (num(S.gst) < 0) m.push("GST % cannot be negative.");
+  $("#msgs").innerHTML = m.map(x => `<div>${esc(x)}</div>`).join("");
+}
+
+/* ================= Persistence ================= */
+let timer;
+function save(now){
+  clearTimeout(timer);
+  const run = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); $("#st").textContent = "Saved " + new Date().toLocaleTimeString(); }
+    catch (e) { $("#st").textContent = "Could not save in browser (storage full?). Use Export JSON."; } };
+  now ? run() : (timer = setTimeout(run, 400));
+}
+function update(){ paintTotals(); validate(); save(); }
+function loadState(o){
+  if (!o || !Array.isArray(o.items) || typeof o.f !== "object") throw new Error("Not a valid quotation file.");
+  if (o.f && typeof o.f.letter === "string") o.f.letter = o.f.letter.replace(/\s*For PATIDAR WINDOWS & DOORS SYSTEM,\s*$/i, "");   // fix duplicate line saved by older version
+  S = {f: {...blank().f, ...o.f}, items: o.items, charges: Array.isArray(o.charges) ? o.charges : [], gst: num(o.gst), brand: o.brand || {}, srcAmt: o.srcAmt == null ? null : num(o.srcAmt)};
+  paint();
+}
+function paintBrand(){
+  const b = S.brand || {}, d = (id, on) => $(id).style.display = on ? "" : "none";
+  if (b.logo) $("#logoImg").src = b.logo; if (b.name) $("#nameImg").src = b.name;
+  d("#logoImg", !!b.logo); d("#nameImg", !!b.name); d("#nameTxt", !b.name);
+}
+function paint(){
+  document.querySelectorAll("[data-f]").forEach(el => el.textContent = S.f[el.dataset.f] || "");
+  paintBrand(); renderRows(); renderCharges(); update();
+}
+
+/* ================= Events ================= */
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.f !== undefined){ S.f[t.dataset.f] = t.innerText.replace(/\n$/, ""); validate(); save(); return; }
+  if (t.id === "gstPct"){ S.gst = t.value === "" ? 0 : num(t.value); update(); return; }
+  const cr = t.closest("tr[data-c]");
+  if (cr){ const c = S.charges[+cr.dataset.c], k = t.dataset.k; c[k] = k === "amt" ? (t.value === "" ? "" : num(t.value)) : t.innerText; update(); return; }
+  const tr = t.closest("tr[data-i]"); if (!tr || !t.dataset.k) return;
+  const it = S.items[+tr.dataset.i], k = t.dataset.k;
+  if (["w","h","qty","rateM","rateF","rateP"].includes(k)){
+    const v = t.value === "" ? "" : num(t.value);
+    it[k] = v; delete it.orig;
+    if (k === "rateM") it.rateF = v === "" ? "" : v / SQF;   // rate per sq.ft = rate per sq.m / 10.763910417
+    if (k === "rateF") it.rateM = v === "" ? "" : v * SQF;
+  } else it[k] = t.innerText !== undefined && t.isContentEditable ? t.innerText.replace(/\n$/, "") : t.value;
+  refreshRow(+tr.dataset.i); update();
+});
+document.addEventListener("change", e => {
+  const t = e.target, tr = t.closest("tr[data-i]");
+  if (t.dataset.k === "unit" && tr){
+    const it = S.items[+tr.dataset.i], c = calc(it), old = it.unit; it.unit = t.value; delete it.orig;
+    if (t.value === "pc"){ if (it.rateP === "" || it.rateP == null) it.rateP = num(it.qty) > 0 && c.amt > 0 ? +(c.amt / num(it.qty)).toFixed(2) : ""; }   // keep current price as the starting per-window rate
+    else if (old === "pc" && c.aM > 0){ it.rateM = +(c.amt / c.aM).toFixed(2); it.rateF = +(c.amt / c.aF).toFixed(2); }
+    renderRows(); update();
+  }
+  if (t.dataset.act === "img" && tr){
+    const f = t.files[0]; if (!f) return;
+    if (!f.type.startsWith("image/")) return alert("Please choose an image file (JPG, PNG, WebP...).");
+    readImg(f, url => { S.items[+tr.dataset.i].img = url; renderRows(); update(); });
+  }
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const tr = b.closest("tr");
+  if (b.dataset.act === "del"){ const it = S.items[+tr.dataset.i];
+    if (confirm(`Delete type ${it.type}? This cannot be undone.`)){ S.items.splice(+tr.dataset.i, 1); S.srcAmt = null; renderRows(); update(); } }
+  if (b.dataset.act === "delc"){ S.charges.splice(+tr.dataset.c, 1); renderCharges(); update(); }
+});
+/* Resize uploaded images to max 600px so print/save stays light and storage-friendly */
+function readImg(file, cb){
+  const r = new FileReader();
+  r.onload = () => { const im = new Image();
+    im.onload = () => { const k = Math.min(1, 600 / Math.max(im.width, im.height)), c = document.createElement("canvas");
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+      cb(c.toDataURL("image/jpeg", .88)); };
+    im.onerror = () => alert("That image could not be read."); im.src = r.result; };
+  r.onerror = () => alert("That file could not be read.");
+  r.readAsDataURL(file);
+}
+$("#bAdd").onclick = () => {
+  const n = S.items.reduce((m, it) => Math.max(m, parseInt(String(it.type).replace(/\D/g, "")) || 0), 0) + 1;
+  S.items.push({type: "W" + n, img: "", loc: "", desc: "", w: "", h: "", qty: 1, rateM: "", rateF: "", rateP: "", unit: "sqm"});
+  renderRows(); update();
+  const r = $(`tr[data-i="${S.items.length - 1}"]`); r.scrollIntoView({block: "center"}); r.querySelector('[data-k="loc"]').focus();
+};
+$("#bChg").onclick = () => { S.charges.push({name: "", amt: ""}); renderCharges(); update(); };
+$("#bSave").onclick = () => save(true);
+$("#bPrint").onclick = () => { validate(); if ($("#msgs").children.length && !confirm("There are validation warnings. Print anyway?")) return; window.print(); };
+$("#bNew").onclick = () => { if (confirm("Start a new quotation? Current work will be cleared (export JSON first to keep it).")){ S = fresh(); paint(); } };
+$("#bExp").onclick = () => {
+  const a = document.createElement("a"), q = (S.f.qno || "quotation").replace(/[^\w-]+/g, "_");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(S)], {type: "application/json"})); a.download = q + ".json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$("#fImp").onchange = e => {
+  const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+  r.onload = () => { try { loadState(JSON.parse(r.result)); } catch (x) { alert("Import failed: " + x.message); } e.target.value = ""; };
+  r.readAsText(f);
+};
+function tick(){
+  const d = new Date(), p = x => String(x).padStart(2,"0");
+  $("#nowD").textContent = `${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()}`;
+  let h = d.getHours(), ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12;
+  $("#nowT").textContent = `${p(h)}:${p(d.getMinutes())}:${p(d.getSeconds())} ${ap}`;
+}
+tick(); setInterval(tick, 1000);
+window.addEventListener("beforeprint", () => { tick(); document.title = (S.f.qno || "Quotation").replace(/[\\/:*?"<>|]/g, "-"); });
+
+/* ================= PDF import =================
+   Reads a text-based quotation PDF made from this template and loads it into the editor (data, item pictures, logo,
+   company-name image, GST and extra charges). Uses pdf.js from cdnjs, so only this feature needs internet. */
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+// column edges as fractions of page width: Type | Image | Location | Description | Size | Qty | Area | Rate | Amount
+const CB = [.048,.091,.228,.311,.531,.629,.69,.768,.841,.95];
+function loadPdfJs(){
+  if (window.pdfjsLib) return Promise.resolve();
+  return new Promise((ok, no) => { const s = document.createElement("script"); s.src = PDFJS + "pdf.min.js"; s.onload = ok;
+    s.onerror = () => no(new Error("The PDF reader could not be loaded. Check your internet connection and try again.")); document.head.appendChild(s); })
+   .then(() => fetch(PDFJS + "pdf.worker.min.js")).then(r => r.text())
+   .then(t => { pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([t], {type: "text/javascript"})); });
+}
+const clean = s => s.normalize("NFKC").replace(/\u019F/g, "ti").replace(/\(cid:\d+\)/g, "ti").trim();   // PDF "ti" ligature glyph
+function groupLines(its){
+  const L = []; its = its.slice().sort((a, b) => b.y - a.y || a.x - b.x);
+  its.forEach(t => { const l = L.find(l => Math.abs(l.y - t.y) < 2.5); l ? l.t.push(t) : L.push({y: t.y, t: [t]}); });
+  L.forEach(l => l.t.sort((a, b) => a.x - b.x)); return L;
+}
+/* Find where pictures are placed on the page (bounding boxes in PDF units) by walking the drawing operators */
+async function imageBoxes(page){
+  const ops = await page.getOperatorList(), O = pdfjsLib.OPS, out = [], st = [];
+  const mul = (A, B) => [A[0]*B[0]+A[1]*B[2], A[0]*B[1]+A[1]*B[3], A[2]*B[0]+A[3]*B[2], A[2]*B[1]+A[3]*B[3], A[4]*B[0]+A[5]*B[2]+B[4], A[4]*B[1]+A[5]*B[3]+B[5]];
+  let m = [1,0,0,1,0,0];
+  ops.fnArray.forEach((fn, i) => {
+    if (fn === O.save) st.push(m.slice());
+    else if (fn === O.restore) m = st.pop() || [1,0,0,1,0,0];
+    else if (fn === O.transform) m = mul(ops.argsArray[i], m);
+    else if (fn === O.paintImageXObject || fn === O.paintInlineImageXObject || fn === O.paintJpegXObject){
+      const xs = [0,1,1,0].map((u, k) => m[0]*u + m[2]*[0,0,1,1][k] + m[4]), ys = [0,1,1,0].map((u, k) => m[1]*u + m[3]*[0,0,1,1][k] + m[5]);
+      out.push({x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys)});
+    }
+  });
+  return out;
+}
+async function importPdf(file){
+  await loadPdfJs();
+  const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await file.arrayBuffer())}).promise;
+  const items = [], text = [], charges = []; let skipped = 0, totalAmt = null, brand = {logo: "", name: ""};
+  for (let p = 1; p <= pdf.numPages; p++){
+    const page = await pdf.getPage(p), SC = 4, vp = page.getViewport({scale: SC}), W = vp.width / SC, H = vp.height / SC;
+    const its = (await page.getTextContent()).items.filter(t => t.str.trim()).map(t => ({s: clean(t.str), x: t.transform[4], y: t.transform[5]}));
+    groupLines(its).forEach(l => text.push(l.t.map(t => t.s).join(" ")));
+    const boxes = (await imageBoxes(page)).filter(b => b.x1 - b.x0 > 30 && b.y1 - b.y0 > 8);   // ignores watermark slivers
+    let canvas = null;
+    const crop = async b => {
+      if (!canvas){ canvas = document.createElement("canvas"); canvas.width = vp.width; canvas.height = vp.height; await page.render({canvasContext: canvas.getContext("2d"), viewport: vp}).promise; }
+      const a = vp.convertToViewportPoint(b.x0, b.y1), z = vp.convertToViewportPoint(b.x1, b.y0), w = Math.round(z[0] - a[0]), h = Math.round(z[1] - a[1]);
+      const c = document.createElement("canvas"); c.width = w; c.height = h;
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(canvas, a[0], a[1], w, h, 0, 0, w, h);
+      return c.toDataURL("image/png");
+    };
+    if (p === 1){   // logo and company-name picture in the letterhead
+      const top = boxes.filter(b => H - b.y1 < 100);
+      const lg = top.find(b => b.x0 < W * .25), nm = top.find(b => b.x0 >= W * .2 && b.x1 - b.x0 > W * .3);
+      if (lg) brand.logo = await crop(lg);
+      if (nm) brand.name = await crop(nm);
+    }
+    // item rows
+    const types = its.filter(t => t.x < CB[1] * W && /^[A-Za-z]{1,3}\d{1,3}$/.test(t.s)).sort((a, b) => b.y - a.y);
+    const ends = its.filter(t => /^(Balance|Total)/.test(t.s)).map(t => t.y);
+    const used = new Set();
+    for (let k = 0; k < types.length; k++){
+      const y0 = types[k].y, below = ends.concat(types[k + 1] ? [types[k + 1].y] : []).filter(y => y < y0 - 5);
+      const edge = below.length ? Math.max(...below) + 5 : y0 - 90;
+      const cols = Array.from({length: 9}, () => []);
+      its.filter(t => t.y <= y0 + 3 && t.y > edge).forEach(t => { for (let c = 0; c < 9; c++) if (t.x >= CB[c] * W && t.x < CB[c + 1] * W) cols[c].push(t); });
+      const cl = c => groupLines(cols[c]).map(l => l.t.map(t => t.s).join(" "));
+      const re = /([\d.]+)\s*X\s*([\d.]+)/i, m1 = (cl(4)[0] || "").match(re), m2 = (cl(4)[1] || "").match(re);
+      if (!m1){ skipped++; continue; }
+      const ar = cl(6), rt = cl(7), w = +m1[1], h = +m1[2];
+      // the picture in the Image column whose top edge sits just above this row's first line
+      let img = "", best = null;
+      boxes.forEach((b, bi) => { const d = b.y1 - y0; if (!used.has(bi) && b.x0 > CB[0] * W && b.x1 < CB[2] * W + 4 && d > -2 && d < 22 && (!best || d < best.d)) best = {d, bi, b}; });
+      if (best){ used.add(best.bi); try { img = await crop(best.b); } catch (e) { img = ""; } }
+      items.push({type: types[k].s, img, loc: cl(2).join(" "), desc: cl(3).join("\n"), w, h, qty: parseInt(cl(5)[0]) || 1,
+        rateM: num(rt[0]), rateF: num(rt[1]), unit: "sqm",
+        orig: {wf: m2 ? +m2[1] : w * FT, hf: m2 ? +m2[2] : h * FT, aM: num(ar[0]), aF: num(ar[1]), amt: num(cl(8)[0])}});
+    }
+    const tt = its.find(t => /^Total\s*:?$/.test(t.s) && t.x > W * .5);
+    if (tt){ const a = its.find(t => Math.abs(t.y - tt.y) < 3 && t.x >= CB[8] * W); if (a) totalAmt = num(a.s.replace(/,/g, "")); }
+    // additional charges block (right-hand table): rows between the "Charges" header and "Grand Total"
+    const ch = its.find(t => t.s === "Charges" && t.x > W * .45), gr = its.find(t => /^Grand/.test(t.s));
+    if (ch && gr) groupLines(its.filter(t => t.x > W * .45 && t.y < ch.y - 3 && t.y > gr.y + 3)).forEach(l => {
+      const str = l.t.map(t => t.s).join(" "), m = str.match(/^(.*?)\s+(-?[\d,]*\.?\d+)$/);
+      if (m && !/^GST/i.test(m[1])) charges.push({name: m[1], amt: num(m[2].replace(/,/g, ""))}); });
+  }
+  if (!items.length) throw new Error("No item rows were found. This reader only works with text-based PDFs made from this quotation template.");
+  const all = text.join("\n"), g = (re, d = "") => { const m = all.match(re); return m ? m[1].trim() : d; };
+  const f = {};
+  const qn = g(/Quotation No\.:-[ \t]*(\S+(?:[ \t]+-)?)/), rev = g(/(Rev\.\s*\d+)/);
+  if (qn) f.qno = (qn + " " + rev).trim();
+  f.qdate = g(/Date:-[ \t]*(\d{1,2}-\d{1,2}-\d{4})/, blank().f.qdate);
+  f.pname = g(/Party Name:-[ \t]*(.*?)(?=[ \t]*Ref\. By|$)/m);
+  f.ref = g(/Ref\. By[ \t]*[–-][ \t]*(.*)/); f.paddr = g(/Address:-[ \t]*(.*)/);
+  f.pcp = g(/Contact Person :-[ \t]*(.*)/); f.pcno = g(/Contact No\.:-[ \t]*(.*)/); f.note = g(/Note:[ \t]*[–-][ \t]*(.*)/);
+  const lines = all.split("\n"), si = lines.findIndex(l => /^SURVEY/i.test(l));
+  if (si >= 0){ f.caddr1 = lines[si]; f.caddr2 = lines[si + 1] || ""; f.ctel = lines[si + 2] || ""; }
+  const ti = lines.findIndex(l => /^TERMS/i.test(l));
+  if (ti >= 0){ const t = []; lines.slice(ti + 1).forEach(l => { if (/^\d+\)/.test(l) || !t.length) t.push(l); else t[t.length - 1] += (/^[a-z]/.test(l) ? "" : " ") + l; }); f.terms = t.join("\n"); }
+  return {state: {f: {...blank().f, ...f}, items, charges, gst: num(g(/GST\s*\(\s*([\d.]+)\s*%\s*\)/, "0")), brand, srcAmt: totalAmt}, skipped};
+}
+$("#fPdf").onchange = async e => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  if (!confirm("Import this PDF? It replaces the quotation you are editing (use Export JSON first to keep it).")) return;
+  $("#st").textContent = "Reading PDF...";
+  try {
+    const r = await importPdf(file); S = r.state; paint();
+    alert(`Imported ${S.items.length} item(s).` + (r.skipped ? ` ${r.skipped} row(s) could not be read.` : "") + "\nPlease compare with your PDF before sending.");
+  } catch (x) { alert("PDF import failed: " + x.message); }
+  $("#st").textContent = "";
+};
+
+/* ================= Start ================= */
+try { const s = localStorage.getItem(KEY); S = s ? (loadState(JSON.parse(s)), S) : blank(); } catch (e) { S = blank(); }
+paint();
+</script></body></html>
