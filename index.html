@@ -259,10 +259,23 @@ function save(now){
   now ? run() : (timer = setTimeout(run, 400));
 }
 function update(){ paintTotals(); validate(); save(); }
+/* After an import, any header detail the file did not carry (company name, address, phone, sign-off, logo, name picture)
+   is kept from the quotation currently open, so the letterhead is never wiped by a file that has no/partial header. */
+function keepHeader(n, prev){
+  const c = prev && prev.f ? prev : null, has = v => String(v || "").trim() !== "";
+  n.brand = {logo: (n.brand && n.brand.logo) || "", name: (n.brand && n.brand.name) || ""};
+  if (!c) return n;
+  ["caddr1","caddr2","ctel","signco"].forEach(k => { if (!has(n.f[k]) && has(c.f[k])) n.f[k] = c.f[k]; });
+  if (!has(n.f.cname) && !n.brand.name){ if (has(c.f.cname)) n.f.cname = c.f.cname; if (c.brand && c.brand.name) n.brand.name = c.brand.name; }
+  if (!n.brand.logo && c.brand && c.brand.logo) n.brand.logo = c.brand.logo;
+  return n;
+}
 function loadState(o){
   if (!o || !Array.isArray(o.items) || typeof o.f !== "object") throw new Error("Not a valid quotation file.");
   if (o.f && typeof o.f.letter === "string") o.f.letter = o.f.letter.replace(/\s*For PATIDAR WINDOWS & DOORS SYSTEM,\s*$/i, "");   // fix duplicate line saved by older version
+  const prev = S;
   S = {f: {...blank().f, ...o.f}, items: o.items, charges: Array.isArray(o.charges) ? o.charges : [], gst: num(o.gst), brand: o.brand || {}, srcAmt: o.srcAmt == null ? null : num(o.srcAmt)};
+  keepHeader(S, prev);
   paint();
 }
 function paintBrand(){
@@ -449,8 +462,16 @@ async function importPdf(file){
   f.pname = g(/Party Name:-[ \t]*(.*?)(?=[ \t]*Ref\. By|$)/m);
   f.ref = g(/Ref\. By[ \t]*[–-][ \t]*(.*)/); f.paddr = g(/Address:-[ \t]*(.*)/);
   f.pcp = g(/Contact Person :-[ \t]*(.*)/); f.pcno = g(/Contact No\.:-[ \t]*(.*)/); f.note = g(/Note:[ \t]*[–-][ \t]*(.*)/);
-  const lines = all.split("\n"), si = lines.findIndex(l => /^SURVEY/i.test(l));
-  if (si >= 0){ f.caddr1 = lines[si]; f.caddr2 = lines[si + 1] || ""; f.ctel = lines[si + 2] || ""; }
+  const lines = all.split("\n"), qi = lines.findIndex(l => /^Quotation$/i.test(l.trim()));
+  if (qi > 0){   // letterhead = the lines above the "Quotation" title (minus the print date/time line and the watermark)
+    const hl = lines.slice(0, qi).map(l => l.trim()).filter(l => l && !/^Date:\s.*Time:/i.test(l) && !/^Powered By/i.test(l) && l !== "Patidar Windows And Doors System");
+    const hasName = !!brand.name, k = hasName ? ["caddr1","caddr2","ctel"] : ["cname","caddr1","caddr2","ctel"];
+    hl.slice(-k.length).forEach((l, i, a) => f[k[k.length - a.length + i]] = l);   // fill from the bottom so a missing line leaves the top one blank
+  } else {
+    const si = lines.findIndex(l => /^SURVEY/i.test(l));
+    if (si >= 0){ f.caddr1 = lines[si]; f.caddr2 = lines[si + 1] || ""; f.ctel = lines[si + 2] || ""; }
+  }
+  const sg = lines.find(l => /^For\s+.+,$/.test(l.trim())); if (sg) f.signco = sg.trim();
   const ti = lines.findIndex(l => /^TERMS/i.test(l));
   if (ti >= 0){ const t = []; lines.slice(ti + 1).forEach(l => { if (/^\d+\)/.test(l) || !t.length) t.push(l); else t[t.length - 1] += (/^[a-z]/.test(l) ? "" : " ") + l; }); f.terms = t.join("\n"); }
   return {state: {f: {...blank().f, ...f}, items, charges, gst: num(g(/GST\s*\(\s*([\d.]+)\s*%\s*\)/, "0")), brand, srcAmt: totalAmt}, skipped};
@@ -460,7 +481,7 @@ $("#fPdf").onchange = async e => {
   if (!confirm("Import this PDF? It replaces the quotation you are editing (use Export JSON first to keep it).")) return;
   $("#st").textContent = "Reading PDF...";
   try {
-    const r = await importPdf(file); S = r.state; paint();
+    const r = await importPdf(file); S = keepHeader(r.state, S); paint();
     alert(`Imported ${S.items.length} item(s).` + (r.skipped ? ` ${r.skipped} row(s) could not be read.` : "") + "\nPlease compare with your PDF before sending.");
   } catch (x) { alert("PDF import failed: " + x.message); }
   $("#st").textContent = "";
